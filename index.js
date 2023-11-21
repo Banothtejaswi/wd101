@@ -1,59 +1,86 @@
-document.getElementById('registrationForm').addEventListener('submit', function (event) {
-    event.preventDefault();
+// Event listener for DOMContentLoaded event
+document.addEventListener('DOMContentLoaded', () => {
+  // Get the reference to the user table body
+  const userTableBody = document.getElementById('userTableBody');
 
-    const name = document.getElementById('name').value;
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
-    const dob = new Date(document.getElementById('dob').value);
-    const acceptTerms = document.getElementById('acceptTerms').checked;
+  // Loop through all localStorage items
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
 
-    const today = new Date();
-    const minAge = new Date(today.getFullYear() - 55, today.getMonth(), today.getDate());
-    const maxAge = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
+    // Check if the key starts with 'user_'
+    if (key.startsWith('user_')) {
+      // Parse the JSON-stored user data from localStorage
+      const userData = JSON.parse(localStorage.getItem(key));
 
-    if (dob < minAge || dob > maxAge) {
-        alert('Please enter a valid date of birth between ages 18 and 55.');
-        return;
+      // Add the user data to the table
+      addRowToTable(userTableBody, userData);
     }
-
-    const userData = {
-        name: name,
-        email: email,
-        password: password,
-        dob: dob.toISOString().slice(0, 10),
-        acceptTerms: acceptTerms ? 'Yes' : 'No'
-    };
-
-    let users = JSON.parse(localStorage.getItem('users')) || [];
-    users.push(userData);
-    localStorage.setItem('users', JSON.stringify(users));
-
-    displayUsers();
-    document.getElementById('registrationForm').reset();
+  }
 });
 
-function displayUsers() {
-    const users = JSON.parse(localStorage.getItem('users')) || [];
-    const tableBody = document.getElementById('userTableBody');
+// Event listener for form submission
+const form = document.getElementById('registrationForm');
+form.addEventListener('submit', (event) => {
+  event.preventDefault(); // Prevent default form submission
 
-    tableBody.innerHTML = '';
+  // Get the user's date of birth from the form
+  const dob = new Date(form.dob.value);
 
-    users.forEach(function (user) {
-        const row = tableBody.insertRow();
-        const cell1 = row.insertCell(0);
-        const cell2 = row.insertCell(1);
-        const cell3 = row.insertCell(2);
-        const cell4 = row.insertCell(3);
-        const cell5 = row.insertCell(4);
+  // Calculate the user's age based on the current year
+  const currentYear = new Date().getFullYear();
+  const age = currentYear - dob.getFullYear();
 
-        cell1.textContent = user.name;
-        cell2.textContent = user.email;
-        cell3.textContent = user.password;
-        cell4.textContent = user.dob;
-        cell5.textContent = user.acceptTerms;
-    });
+  // Validate the user's age to ensure it's between 18 and 55
+  if (!(age >= 18 && age <= 55)) {
+    alert('Age should be between 18 and 55.');
+    return;
+  }
+
+  // Generate a unique user key using the current timestamp
+  const userKey = 'user_' + Date.now();
+
+  // Create a user object with the form data
+  const userData = {
+    name: form.name.value,
+    email: form.email.value,
+    password: form.password.value,
+    dob: form.dob.value,
+    acceptedTerms: form.acceptedTerms.checked,
+  };
+
+  // Store the user data in localStorage using the generated key
+  localStorage.setItem(userKey, JSON.stringify(userData));
+
+  // Add the user data to the table
+  addRowToTable(userTableBody, userData);
+});
+
+// Function to add a new user row to the table
+function addRowToTable(tableBody, userData) {
+  // Create a new table row
+  const newRow = tableBody.insertRow();
+
+  // Set a consistent style for all cells
+  const cellStyle = 'border border-gray-300 p-2';
+
+  // Add cells for each user data property
+  const nameCell = newRow.insertCell();
+  nameCell.textContent = userData.name;
+  nameCell.className = cellStyle;
+
+  const emailCell = newRow.insertCell();
+  emailCell.textContent = userData.email;
+  emailCell.className = cellStyle;
+
+  const passwordCell = newRow.insertCell();
+  passwordCell.textContent = userData.password;
+  passwordCell.className = cellStyle;
+
+  const dobCell = newRow.insertCell();
+  dobCell.textContent = userData.dob;
+  dobCell.className = cellStyle;
+
+  const acceptedTermsCell = newRow.insertCell();
+  acceptedTermsCell.textContent = userData.acceptedTerms;
+  acceptedTermsCell.className = cellStyle;
 }
-
-window.onload = function () {
-    displayUsers();
-};
